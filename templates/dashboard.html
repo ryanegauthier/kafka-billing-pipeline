@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kafka Billing Pipeline Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            color: white;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .stat-card h3 {
+            color: #666;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+        }
+
+        .stat-card .value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .stat-card .subtitle {
+            color: #888;
+            font-size: 0.9rem;
+        }
+
+        .charts-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .chart-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        .chart-card h3 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.2rem;
+        }
+
+        .events-table {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        .events-table h3 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.2rem;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+
+        th {
+            background-color: #f8f9fa;
+            font-weight: 600;
+            color: #666;
+        }
+
+        tr:hover {
+            background-color: #f8f9fa;
+        }
+
+        .event-type {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .event-type.container {
+            background-color: #e3f2fd;
+            color: #1976d2;
+        }
+
+        .event-type.truck {
+            background-color: #f3e5f5;
+            color: #7b1fa2;
+        }
+
+        .event-type.storage {
+            background-color: #e8f5e8;
+            color: #388e3c;
+        }
+
+        .amount {
+            font-weight: 600;
+            color: #2e7d32;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        .refresh-indicator {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(255,255,255,0.9);
+            padding: 10px 15px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            color: #666;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        @media (max-width: 768px) {
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .stats-grid {
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚢 Kafka Billing Pipeline</h1>
+            <p>Real-time Terminal Operations Dashboard</p>
+        </div>
+
+        <div class="refresh-indicator" id="refreshIndicator">
+            Last updated: <span id="lastUpdated">Loading...</span>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <h3>Total Events</h3>
+                <div class="value" id="totalEvents">-</div>
+                <div class="subtitle">All time processed</div>
+            </div>
+            <div class="stat-card">
+                <h3>Total Revenue</h3>
+                <div class="value" id="totalRevenue">-</div>
+                <div class="subtitle">All time billed</div>
+            </div>
+            <div class="stat-card">
+                <h3>Last Hour</h3>
+                <div class="value" id="lastHourEvents">-</div>
+                <div class="subtitle" id="lastHourRevenue">-</div>
+            </div>
+            <div class="stat-card">
+                <h3>Last 5 Minutes</h3>
+                <div class="value" id="last5MinEvents">-</div>
+                <div class="subtitle" id="last5MinRevenue">-</div>
+            </div>
+        </div>
+
+        <div class="charts-grid">
+            <div class="chart-card">
+                <h3>📊 Events by Type</h3>
+                <div id="eventsByType">
+                    <div class="loading">Loading...</div>
+                </div>
+            </div>
+            <div class="chart-card">
+                <h3>👥 Top Customers</h3>
+                <div id="topCustomers">
+                    <div class="loading">Loading...</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="events-table">
+            <h3>🕒 Recent Events</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Time</th>
+                        <th>Event Type</th>
+                        <th>Customer</th>
+                        <th>Terminal</th>
+                        <th>Amount</th>
+                    </tr>
+                </thead>
+                <tbody id="recentEvents">
+                    <tr>
+                        <td colspan="5" class="loading">Loading...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        function formatCurrency(amount) {
+            return new Intl.NumberFormat('en-US', {
+                style: 'currency',
+                currency: 'USD'
+            }).format(amount);
+        }
+
+        function formatNumber(num) {
+            return new Intl.NumberFormat('en-US').format(num);
+        }
+
+        function updateStats(data) {
+            document.getElementById('totalEvents').textContent = formatNumber(data.total_events);
+            document.getElementById('totalRevenue').textContent = formatCurrency(data.total_revenue);
+            document.getElementById('lastHourEvents').textContent = formatNumber(data.last_hour_events);
+            document.getElementById('lastHourRevenue').textContent = formatCurrency(data.last_hour_revenue);
+            document.getElementById('last5MinEvents').textContent = formatNumber(data.last_5min_events);
+            document.getElementById('last5MinRevenue').textContent = formatCurrency(data.last_5min_revenue);
+            document.getElementById('lastUpdated').textContent = data.last_updated;
+        }
+
+        function updateEventsByType(events) {
+            const container = document.getElementById('eventsByType');
+            if (events.length === 0) {
+                container.innerHTML = '<div class="loading">No events yet</div>';
+                return;
+            }
+
+            let html = '<table style="width: 100%; border-collapse: collapse;">';
+            html += '<tr><th style="text-align: left; padding: 8px;">Type</th><th style="text-align: right; padding: 8px;">Count</th><th style="text-align: right; padding: 8px;">Revenue</th></tr>';
+            
+            events.forEach(event => {
+                html += `<tr>
+                    <td style="padding: 8px;">${event.type}</td>
+                    <td style="text-align: right; padding: 8px;">${formatNumber(event.count)}</td>
+                    <td style="text-align: right; padding: 8px; font-weight: 600; color: #2e7d32;">${formatCurrency(event.amount)}</td>
+                </tr>`;
+            });
+            
+            html += '</table>';
+            container.innerHTML = html;
+        }
+
+        function updateTopCustomers(customers) {
+            const container = document.getElementById('topCustomers');
+            if (customers.length === 0) {
+                container.innerHTML = '<div class="loading">No customers yet</div>';
+                return;
+            }
+
+            let html = '<table style="width: 100%; border-collapse: collapse;">';
+            html += '<tr><th style="text-align: left; padding: 8px;">Customer</th><th style="text-align: right; padding: 8px;">Events</th><th style="text-align: right; padding: 8px;">Revenue</th></tr>';
+            
+            customers.forEach(customer => {
+                html += `<tr>
+                    <td style="padding: 8px;">${customer.customer}</td>
+                    <td style="text-align: right; padding: 8px;">${formatNumber(customer.count)}</td>
+                    <td style="text-align: right; padding: 8px; font-weight: 600; color: #2e7d32;">${formatCurrency(customer.amount)}</td>
+                </tr>`;
+            });
+            
+            html += '</table>';
+            container.innerHTML = html;
+        }
+
+        function updateRecentEvents(events) {
+            const tbody = document.getElementById('recentEvents');
+            if (events.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="loading">No events yet</td></tr>';
+                return;
+            }
+
+            let html = '';
+            events.forEach(event => {
+                const eventClass = event.event_type.toLowerCase().replace('_', '');
+                html += `<tr>
+                    <td>${event.time}</td>
+                    <td><span class="event-type ${eventClass}">${event.event_type}</span></td>
+                    <td>${event.customer}</td>
+                    <td>${event.terminal}</td>
+                    <td class="amount">${formatCurrency(event.amount)}</td>
+                </tr>`;
+            });
+            
+            tbody.innerHTML = html;
+        }
+
+        async function fetchData() {
+            try {
+                const response = await fetch('/api/stats');
+                const data = await response.json();
+                
+                updateStats(data);
+                updateEventsByType(data.events_by_type);
+                updateTopCustomers(data.top_customers);
+                updateRecentEvents(data.recent_events);
+                
+            } catch (error) {
+                console.error('Error fetching data:', error);
+            }
+        }
+
+        // Initial load
+        fetchData();
+
+        // Refresh every 5 seconds
+        setInterval(fetchData, 5000);
+    </script>
+</body>
+</html> 

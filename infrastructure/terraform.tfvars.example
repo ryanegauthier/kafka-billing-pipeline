@@ -1,0 +1,13 @@
+# AWS Configuration
+aws_region = "us-east-1"
+
+# Database Configuration
+db_password = "your-secure-password-here"
+
+# Optional: Override common tags
+common_tags = {
+  Project     = "kafka-billing-pipeline"
+  Environment = "production"
+  ManagedBy   = "terraform"
+  Owner       = "your-team"
+} 
