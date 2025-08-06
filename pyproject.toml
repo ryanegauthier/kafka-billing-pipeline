@@ -31,6 +31,7 @@ dependencies = [
     "psycopg2-binary>=2.9.10",
     "pandas>=2.3.1",
     "psutil>=5.8.0",
+    "flask>=3.0.0",
 ]
 
 [project.optional-dependencies]
@@ -51,6 +52,7 @@ kafka-producer = "kafka_billing_pipeline.producer:main"
 kafka-consumer = "kafka_billing_pipeline.billing_processor:main"
 kafka-analytics = "kafka_billing_pipeline.analytics:main"
 kafka-dashboard = "kafka_billing_pipeline.monitoring:main"
+kafka-web-dashboard = "web_dashboard:main"
 
 [tool.setuptools.packages.find]
 where = ["."]

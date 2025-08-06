@@ -29,6 +29,7 @@ Terminal Events → Kafka → Real-time Processing → PostgreSQL → Analytics 
 make setup          # First time setup
 make docker-up      # Start containers
 make start-pipeline # Start pipeline
+make run-web-dashboard # Start web interface (optional)
 ```
 
 ### Stop Everything
@@ -42,6 +43,7 @@ make start-pipeline # Start all components
 make stop-pipeline  # Stop all components
 make docker-up      # Start containers
 make docker-down    # Stop containers
+make run-web-dashboard # Start web interface
 ```
 
 ### Kafka Features Demonstrated
@@ -173,6 +175,34 @@ pip install -e ".[dev]"
 python test_connections.py
 ```
 
+## 🌐 Web Dashboard
+
+The project includes a **real-time web dashboard** for monitoring your Kafka billing pipeline:
+
+### Features
+- **Live Statistics**: Total events, revenue, and activity metrics
+- **Real-time Updates**: Auto-refreshes every 5 seconds
+- **Event Analytics**: Breakdown by type, customer, and terminal
+- **Recent Activity**: Latest billing events with timestamps
+- **API Endpoints**: RESTful API for data access
+
+### Access the Dashboard
+```bash
+# Start the web dashboard
+make run-web-dashboard
+
+# Or directly with Python
+python web_dashboard.py
+```
+
+The dashboard will be available at: **http://localhost:5000**
+
+### Prerequisites
+Before starting the web dashboard, ensure:
+1. **Docker containers are running**: `make docker-up`
+2. **Pipeline is generating data**: `make start-pipeline` (optional, for live data)
+3. **Flask is installed**: Included in project dependencies
+
 ## 🎯 Usage Examples
 
 ### Using Make Commands (Recommended)
@@ -182,6 +212,7 @@ make run-producer      # Start event producer
 make run-consumer      # Start billing processor  
 make run-analytics     # Start analytics dashboard
 make run-dashboard     # Start monitoring dashboard
+make run-web-dashboard # Start web interface
 
 # Start complete pipeline (with proper process management)
 make start-pipeline    # Start all components together
@@ -213,6 +244,9 @@ python -m kafka_billing_pipeline.analytics
 # Start Monitoring Dashboard
 python -m kafka_billing_pipeline.monitoring
 
+# Start Web Dashboard
+python web_dashboard.py
+
 # Or use the pipeline manager for complete control
 python start_pipeline.py start    # Start all components
 python start_pipeline.py stop     # Stop all components
@@ -229,6 +263,7 @@ kafka-producer
 kafka-consumer
 kafka-analytics
 kafka-dashboard
+kafka-web-dashboard
 ```
 
 ## 📊 Business Logic Examples
